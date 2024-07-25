@@ -6,6 +6,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Properties;
+
 @Configuration
 class LoadDatabase {
 
@@ -15,6 +17,7 @@ class LoadDatabase {
 	CommandLineRunner initDatabase(EmployeeRepository employeeRepository, OrderRepository orderRepository) {
 
 		return args -> {
+
 			employeeRepository.save(new Employee("Bilbo", "Baggins", "burglar"));
 			employeeRepository.save(new Employee("Frodo", "Baggins", "thief"));
 
@@ -27,7 +30,7 @@ class LoadDatabase {
 			orderRepository.findAll().forEach(order -> {
 				log.info("Preloaded " + order);
 			});
-			
+
 		};
 	}
 }

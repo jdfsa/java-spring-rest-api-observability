@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres
+    restart: always
+    env_file:
+      - docker-environments.env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - 25432:5432/tcp
+  api:
+    container_name: api
+    build:
+      dockerfile: ./Dockerfile
+    env_file:
+      - docker-environments.env
+    environment:
+      - SPRING_PROFILES_ACTIVE=pg
+      - DB_HOST=db
+      - DB_PORT=5432
+    ports:
+      - 28080:8080
+    depends_on:
+      - db
+volumes:
+  pgdata:
+    name: postgres-container_pgdata
