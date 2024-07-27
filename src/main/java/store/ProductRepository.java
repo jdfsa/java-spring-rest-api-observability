@@ -2,6 +2,7 @@ package store;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-interface ProductRepository extends JpaRepository<Product, Long> {
+import java.util.List;
 
+interface ProductRepository extends JpaRepository<Product, Long> {
 }

@@ -24,8 +24,8 @@ class ProductController {
     @GetMapping("/products")
     CollectionModel<EntityModel<Product>> all() {
 
-        List<EntityModel<Product>> products = repository.findAll().stream() //
-                .map(assembler::toModel) //
+        List<EntityModel<Product>> products = repository.findAll().stream()
+                .map(assembler::toModel)
                 .collect(Collectors.toList());
 
         return CollectionModel.of(products, linkTo(methodOn(ProductController.class).all()).withSelfRel());
