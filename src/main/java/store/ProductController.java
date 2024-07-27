@@ -1,0 +1,58 @@
+package store;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.IanaLinkRelations;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
+@RestController
+@RequiredArgsConstructor
+class ProductController {
+
+    private final ProductRepository repository;
+    private final ProductModelAssembler assembler;
+
+
+    @GetMapping("/products")
+    CollectionModel<EntityModel<Product>> all() {
+
+        List<EntityModel<Product>> products = repository.findAll().stream() //
+                .map(assembler::toModel) //
+                .collect(Collectors.toList());
+
+        return CollectionModel.of(products, linkTo(methodOn(ProductController.class).all()).withSelfRel());
+    }
+
+    @PostMapping("/products")
+    ResponseEntity<?> newProduct(@RequestBody Product product) {
+
+        EntityModel<Product> entityModel = assembler.toModel(repository.save(product));
+
+        return ResponseEntity.created(entityModel.getRequiredLink(IanaLinkRelations.SELF).toUri()).body(entityModel);
+    }
+
+    @GetMapping("/products/{id}")
+    EntityModel<Product> one(@PathVariable Long id) {
+
+        Product product = repository.findById(id) //
+                .orElseThrow(() -> new ProductNotFoundException(id));
+
+        return assembler.toModel(product);
+    }
+
+    @DeleteMapping("/products/{id}")
+    ResponseEntity<?> deleteProduct(@PathVariable Long id) {
+
+        repository.deleteById(id);
+
+        return ResponseEntity.noContent().build();
+    }
+}

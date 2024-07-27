@@ -1,4 +1,4 @@
-package payroll;
+package store;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
