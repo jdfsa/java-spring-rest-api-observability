@@ -11,3 +11,4 @@ logback pattern: specific MDC values
 docker commands
 * docker-compose down -v
 * docker compose build api --no-cache
+# docker compose up -d
