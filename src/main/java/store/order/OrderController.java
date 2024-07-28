@@ -1,9 +1,8 @@
-package store;
+package store.order;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 import java.math.BigDecimal;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,18 +23,20 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import store.product.Product;
+import store.product.ProductRepository;
 
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-class OrderController {
+public class OrderController {
 
 	private final OrderModelAssembler assembler;
 	private final OrderRepository orderRepository;
 	private final ProductRepository productRepository;
 
 	@GetMapping("/orders")
-	CollectionModel<EntityModel<Order>> all() {
+	public CollectionModel<EntityModel<Order>> all() {
 
 		final List<EntityModel<Order>> orders = orderRepository.findAll().stream()
 				.map(assembler::toModel)
@@ -47,7 +48,7 @@ class OrderController {
 	}
 
 	@GetMapping("/orders/{id}")
-	EntityModel<Order> one(@PathVariable Long id) {
+	public EntityModel<Order> one(@PathVariable Long id) {
 		log.info("Request for order by ID: {}", id);
 
 		final Order order = orderRepository.findById(id)
@@ -59,7 +60,7 @@ class OrderController {
 	}
 
 	@PostMapping("/orders")
-	ResponseEntity<EntityModel<Order>> newOrder(final @RequestBody Order order) {
+	public ResponseEntity<EntityModel<Order>> newOrder(final @RequestBody Order order) {
 		log.info("requested new order");
 
 		if (CollectionUtils.isEmpty(order.getItems())) {
@@ -68,7 +69,7 @@ class OrderController {
 			throw new OrderWithInvalidItemsException("Order items not informed correctly", order);
 		}
 
-		order.setStatus(Status.IN_PROGRESS);
+		order.setStatus(OrderStatus.IN_PROGRESS);
 
 		log.debug("calculating total price for order: {}", order.getId());
 		BigDecimal totalPrice = BigDecimal.ZERO;
@@ -91,13 +92,13 @@ class OrderController {
 	}
 
 	@DeleteMapping("/orders/{id}/cancel")
-	ResponseEntity<?> cancel(@PathVariable Long id) {
+	public ResponseEntity<?> cancel(@PathVariable Long id) {
 
 		final Order order = orderRepository.findById(id)
 				.orElseThrow(() -> new OrderNotFoundException(id));
 
-		if (order.getStatus() == Status.IN_PROGRESS) {
-			order.setStatus(Status.CANCELLED);
+		if (order.getStatus() == OrderStatus.IN_PROGRESS) {
+			order.setStatus(OrderStatus.CANCELLED);
 			return ResponseEntity.ok(assembler.toModel(orderRepository.save(order)));
 		}
 
@@ -112,15 +113,15 @@ class OrderController {
 	}
 
 	@PutMapping("/orders/{id}/complete")
-	ResponseEntity<?> complete(@PathVariable Long id) {
+	public ResponseEntity<?> complete(@PathVariable Long id) {
 		log.info("request for completing an order - ID: {}", id);
 
 		final Order order = orderRepository.findById(id)
 				.orElseThrow(() -> new OrderNotFoundException(id));
 
-		if (order.getStatus() == Status.IN_PROGRESS) {
+		if (order.getStatus() == OrderStatus.IN_PROGRESS) {
 			log.info("order marked as complete");
-			order.setStatus(Status.COMPLETED);
+			order.setStatus(OrderStatus.COMPLETED);
 
 			final Order persistedOrder = orderRepository.save(order);
 			log.debug("order persisted: {}", persistedOrder);

@@ -1,6 +1,6 @@
-package store;
+package store.order;
 
-class OrderItemProductNotFoundException extends RuntimeException {
+public class OrderItemProductNotFoundException extends RuntimeException {
 	OrderItemProductNotFoundException(long id) {
 		super("Product informed not available - ID: " + id);
 	}

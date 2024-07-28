@@ -1,4 +1,4 @@
-package store;
+package store.product;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.CollectionModel;
@@ -15,14 +15,14 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequiredArgsConstructor
-class ProductController {
+public class ProductController {
 
     private final ProductRepository repository;
     private final ProductModelAssembler assembler;
 
 
     @GetMapping("/products")
-    CollectionModel<EntityModel<Product>> all() {
+    public CollectionModel<EntityModel<Product>> all() {
 
         List<EntityModel<Product>> products = repository.findAll().stream()
                 .map(assembler::toModel)
@@ -32,7 +32,7 @@ class ProductController {
     }
 
     @PostMapping("/products")
-    ResponseEntity<?> newProduct(@RequestBody Product product) {
+    public ResponseEntity<?> newProduct(@RequestBody Product product) {
 
         EntityModel<Product> entityModel = assembler.toModel(repository.save(product));
 
@@ -40,7 +40,7 @@ class ProductController {
     }
 
     @GetMapping("/products/{id}")
-    EntityModel<Product> one(@PathVariable Long id) {
+    public EntityModel<Product> one(@PathVariable Long id) {
 
         Product product = repository.findById(id) //
                 .orElseThrow(() -> new ProductNotFoundException(id));
@@ -49,7 +49,7 @@ class ProductController {
     }
 
     @DeleteMapping("/products/{id}")
-    ResponseEntity<?> deleteProduct(@PathVariable Long id) {
+    public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
 
         repository.deleteById(id);
 

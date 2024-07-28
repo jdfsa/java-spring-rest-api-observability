@@ -7,7 +7,7 @@ import java.time.LocalDate;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class Utils {
+public final class Utils {
 
     public static LocalDate randomBirthday() {
         final long minDay = LocalDate.of(1970, 1, 1).toEpochDay();

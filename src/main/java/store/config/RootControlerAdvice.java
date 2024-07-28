@@ -1,4 +1,4 @@
-package store;
+package store.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.hateoas.mediatype.problem.Problem;
@@ -6,6 +6,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import store.customer.CustomerNotFoundException;
+import store.order.OrderItemProductNotFoundException;
+import store.order.OrderNotFoundException;
+import store.order.OrderWithInvalidItemsException;
 
 @Slf4j
 @RestControllerAdvice

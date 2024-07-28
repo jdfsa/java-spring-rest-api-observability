@@ -7,3 +7,4 @@ logback pattern: all MDC values
 
 logback pattern: specific MDC values
 %d{HH:mm:ss.SSSZZ} [%thread] %-5level %X{traceId} %X{host} %logger{36} - %msg%n
+

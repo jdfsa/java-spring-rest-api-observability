@@ -1,4 +1,4 @@
-package store;
+package store.customer;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -14,7 +14,7 @@ import java.time.LocalDate;
 @Table(name = "customers")
 @NoArgsConstructor
 @AllArgsConstructor
-class Customer {
+public class Customer {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

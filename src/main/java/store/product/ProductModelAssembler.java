@@ -1,4 +1,4 @@
-package store;
+package store.product;
 
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelAssembler;
@@ -8,7 +8,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @Component
-class ProductModelAssembler implements RepresentationModelAssembler<Product, EntityModel<Product>> {
+public class ProductModelAssembler implements RepresentationModelAssembler<Product, EntityModel<Product>> {
 
 	@Override
 	public EntityModel<Product> toModel(Product product) {

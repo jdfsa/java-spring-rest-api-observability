@@ -1,4 +1,4 @@
-package store;
+package store.customer;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
@@ -7,7 +7,8 @@ import org.springframework.hateoas.server.RepresentationModelAssembler;
 import org.springframework.stereotype.Component;
 
 @Component
-class CustomerModelAssembler implements RepresentationModelAssembler<Customer, EntityModel<Customer>> {
+public class CustomerModelAssembler implements
+		RepresentationModelAssembler<Customer, EntityModel<Customer>> {
 
 	@Override
 	public EntityModel<Customer> toModel(final Customer customer) {

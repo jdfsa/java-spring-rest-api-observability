@@ -1,4 +1,4 @@
-package store;
+package store.order;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -9,8 +9,6 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Stream;
 
 @Entity
 @Table(name = "orders")
@@ -18,13 +16,13 @@ import java.util.stream.Stream;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-class Order {
+public class Order {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
 
-	private Status status;
+	private OrderStatus status;
 
 	private BigDecimal totalPrice;
 

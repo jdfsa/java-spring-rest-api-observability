@@ -1,10 +1,11 @@
-package store;
+package store.order;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import store.product.Product;
 
 @Entity
 @Table(name = "order_items")
@@ -12,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-class OrderItem {
+public class OrderItem {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)

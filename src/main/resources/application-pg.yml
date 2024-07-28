@@ -5,6 +5,6 @@ spring.datasource.password: ${POSTGRES_PASSWORD}
   
 # create and drop table, good for testing, production set to none or comment it
 spring.jpa.hibernate.ddl-auto: create-drop
-  
+
 # app custom property, if true, insert data for testing
 app.db.init.enabled: true

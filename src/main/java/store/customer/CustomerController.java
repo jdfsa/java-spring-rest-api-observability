@@ -1,4 +1,4 @@
-package store;
+package store.customer;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
@@ -15,20 +15,19 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-class CustomerController {
+public class CustomerController {
 
 	private final CustomerRepository repository;
 	private final CustomerModelAssembler assembler;
 
 	@GetMapping("/customers")
-	CollectionModel<EntityModel<Customer>> all() {
+	public CollectionModel<EntityModel<Customer>> all() {
 		List<EntityModel<Customer>> customers = repository.findAll().stream()
 				.map(assembler::toModel)
 				.collect(Collectors.toList());
@@ -36,7 +35,7 @@ class CustomerController {
 	}
 
 	@PostMapping("/customers")
-	ResponseEntity<?> newCustomer(@RequestBody Customer customer) {
+	public ResponseEntity<?> newCustomer(@RequestBody Customer customer) {
 		EntityModel<Customer> entityModel = assembler.toModel(repository.save(customer));
 		return ResponseEntity.created(entityModel.getRequiredLink(IanaLinkRelations.SELF).toUri())
 				.body(entityModel);
@@ -45,7 +44,7 @@ class CustomerController {
 	// Single item
 
 	@GetMapping("/customers/{id}")
-	EntityModel<Customer> one(@PathVariable Long id) {
+	public EntityModel<Customer> one(@PathVariable Long id) {
 
 		Customer customer = repository.findById(id)
 				.orElseThrow(() -> new CustomerNotFoundException(id));
@@ -54,7 +53,7 @@ class CustomerController {
 	}
 
 	@DeleteMapping("/customers/{id}")
-	ResponseEntity<?> deleteEmployee(@PathVariable Long id) {
+	public ResponseEntity<?> deleteEmployee(@PathVariable Long id) {
 
 		repository.deleteById(id);
 

@@ -5,14 +5,22 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import store.customer.Customer;
+import store.customer.CustomerRepository;
+import store.order.Order;
+import store.order.OrderItem;
+import store.order.OrderRepository;
+import store.order.OrderStatus;
+import store.product.Product;
+import store.product.ProductRepository;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 @Configuration
-class ApplicationStartUp {
+class StoreApplicationStartUp {
 
-    private static final Logger log = LoggerFactory.getLogger(ApplicationStartUp.class);
+    private static final Logger log = LoggerFactory.getLogger(StoreApplicationStartUp.class);
 
     @Bean
     CommandLineRunner initDatabase(
@@ -63,7 +71,7 @@ class ApplicationStartUp {
                             p1.getPrice().multiply(BigDecimal.valueOf(item1.getQuantity())),
                             p2.getPrice().multiply(BigDecimal.valueOf(item2.getQuantity()))
                     ))
-                    .status(Status.IN_PROGRESS)
+                    .status(OrderStatus.IN_PROGRESS)
                     .build();
             orderRepository.save(order1);
             orderRepository.findAll().forEach(order -> log.info("Order " + order));

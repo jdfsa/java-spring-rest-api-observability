@@ -1,9 +1,9 @@
-package store;
+package store.order;
 
 import lombok.Getter;
 
 @Getter
-class OrderWithInvalidItemsException extends RuntimeException {
+public class OrderWithInvalidItemsException extends RuntimeException {
 
 	private Order order;
 

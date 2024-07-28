@@ -1,13 +1,16 @@
-package store;
+package store.config;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 import org.springframework.hateoas.RepresentationModel;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import store.customer.CustomerController;
+import store.order.OrderController;
+import store.product.ProductController;
 
 @RestController
-class RootController {
+public class RootController {
 
 	@GetMapping
 	RepresentationModel<?> index() {
