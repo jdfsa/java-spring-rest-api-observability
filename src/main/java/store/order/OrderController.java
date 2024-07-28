@@ -78,12 +78,14 @@ public class OrderController {
 			final Product product = productRepository.findById(productId)
 					.orElseThrow(() -> new OrderItemProductNotFoundException(productId));
 			final BigDecimal productPrice = product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity() + 1));
+			item.setProduct(product);
 			totalPrice = totalPrice.add(productPrice);
 		}
 		order.setTotalPrice(totalPrice);
 
 		log.debug("order that is going to be persisted: {}", order);
 		final Order newOrder = orderRepository.save(order);
+
 		log.debug("order saved successfully: {}", newOrder);
 
 		return ResponseEntity
