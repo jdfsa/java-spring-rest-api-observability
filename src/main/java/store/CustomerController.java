@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.IanaLinkRelations;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 class CustomerController {
@@ -27,20 +29,17 @@ class CustomerController {
 
 	@GetMapping("/customers")
 	CollectionModel<EntityModel<Customer>> all() {
-
-		List<EntityModel<Customer>> customers = repository.findAll().stream() //
-				.map(assembler::toModel) //
+		List<EntityModel<Customer>> customers = repository.findAll().stream()
+				.map(assembler::toModel)
 				.collect(Collectors.toList());
-
 		return CollectionModel.of(customers, linkTo(methodOn(CustomerController.class).all()).withSelfRel());
 	}
 
 	@PostMapping("/customers")
 	ResponseEntity<?> newCustomer(@RequestBody Customer customer) {
-
 		EntityModel<Customer> entityModel = assembler.toModel(repository.save(customer));
-
-		return ResponseEntity.created(entityModel.getRequiredLink(IanaLinkRelations.SELF).toUri()).body(entityModel);
+		return ResponseEntity.created(entityModel.getRequiredLink(IanaLinkRelations.SELF).toUri())
+				.body(entityModel);
 	}
 
 	// Single item

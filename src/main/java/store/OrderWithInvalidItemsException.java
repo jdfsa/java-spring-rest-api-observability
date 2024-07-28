@@ -1,8 +1,14 @@
 package store;
 
+import lombok.Getter;
+
+@Getter
 class OrderWithInvalidItemsException extends RuntimeException {
 
+	private Order order;
+
 	OrderWithInvalidItemsException(final String message, final Order order) {
-		super(message + ": " + order.toString());
+		super(message);
+		this.order = order;
 	}
 }

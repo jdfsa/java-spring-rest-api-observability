@@ -1,0 +1,9 @@
+links
+- logback documentation: https://logback.qos.ch/manual/layouts.html
+- logback implementation: https://betterstack.com/community/guides/logging/java/logback/
+
+logback pattern: all MDC values
+%d{HH:mm:ss.SSSZZ} [%thread] %-5level %X %logger{36} - %msg%n
+
+logback pattern: specific MDC values
+%d{HH:mm:ss.SSSZZ} [%thread] %-5level %X{traceId} %X{host} %logger{36} - %msg%n

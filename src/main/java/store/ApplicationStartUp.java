@@ -10,9 +10,9 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Configuration
-class StoreApplicationStartUp {
+class ApplicationStartUp {
 
-    private static final Logger log = LoggerFactory.getLogger(StoreApplicationStartUp.class);
+    private static final Logger log = LoggerFactory.getLogger(ApplicationStartUp.class);
 
     @Bean
     CommandLineRunner initDatabase(

@@ -1,7 +1,7 @@
 package store;
 
 class OrderItemProductNotFoundException extends RuntimeException {
-	OrderItemProductNotFoundException(Long id) {
-		super("Could not find product " + id);
+	OrderItemProductNotFoundException(long id) {
+		super("Product informed not available - ID: " + id);
 	}
 }
