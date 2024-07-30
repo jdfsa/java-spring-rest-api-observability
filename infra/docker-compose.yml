@@ -1,0 +1,55 @@
+services:
+
+  db:
+    image: postgres
+    env_file:
+      - ./pg/posgresql.env
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    ports:
+      - 25432:5432/tcp
+
+  api:
+    container_name: api
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    env_file:
+      - ./pg/posgresql.env
+    environment:
+      - SPRING_PROFILES_ACTIVE=pg
+      - DB_HOST=db
+      - DB_PORT=5432
+    ports:
+      - 28080:8080
+    logging:
+      driver: elastic/elastic-logging-plugin:8.7.1
+      options:
+        hosts: https://localhost:9200
+        user: elastic
+        password: changeme
+        index: storeapp
+    depends_on:
+      - db
+  
+  #logging:
+  #  driver: splunk
+  #  options:
+  #    splunk-source: store-api
+  #    splunk-format: "json"
+  #    splunk-url: https://splunk:8088
+  #    splunk-token: eyJraWQiOiJzcGx1bmsuc2VjcmV0IiwiYWxnIjoiSFM1MTIiLCJ2ZXIiOiJ2MiIsInR0eXAiOiJzdGF0aWMifQ.eyJpc3MiOiJhZG1pbiBmcm9tIHNwbHVuayIsInN1YiI6ImFkbWluIiwiYXVkIjoiZXZlcnlib2R5IiwiaWRwIjoiU3BsdW5rIiwianRpIjoiMGMzMjI5NmJjMDA3YWI4NmIzMWY2MDA0Mzk3Y2VhZjI0YzNlOTM3YTY3NmE3ZjQyY2MxZDk3NDVjNDBmYzBkNiIsImlhdCI6MTcyMjE0MTgxOSwiZXhwIjoxNzI0NzMzODE5LCJuYnIiOjE3MjIxNDE4MTl9.bRFq30xzaTW235KyInLB_0YQRXXjRMr13cweuv0TMrK4i5n91NSPwojnUgze26N4yEsPZqBmZLoKpMb8c_sLbw
+  #    splunk-insecureskipverify: "true"
+  #    splunk-verify-connection: "false"
+  #    splunk-index: store
+
+  #splunk:
+  #  extends:
+  #    file: docker-compose-splunk.yml
+  #    service: splunk
+
+volumes:
+  pg-data:
+    name: postgres-container_pgdata
+  splunk-etc:
+  splunk-var:
