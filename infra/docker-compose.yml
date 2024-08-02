@@ -23,25 +23,24 @@ services:
     ports:
       - 28080:8080
     logging:
-      driver: elastic/elastic-logging-plugin:8.7.1
+      #driver: elastic/elastic-logging-plugin:8.7.1
+      #options:
+      #  hosts: https://localhost:9200
+      #  user: elastic
+      #  password: changeme
+      #  index: storeapp
+      driver: splunk
       options:
-        hosts: https://localhost:9200
-        user: elastic
-        password: changeme
-        index: storeapp
+        splunk-source: store-api
+        splunk-format: "json"
+        splunk-url: http://localhost:8088
+        splunk-token: 68847334-5857-4c07-b03b-a4a251400d04
+        splunk-insecureskipverify: "true"
+        splunk-verify-connection: "false"
+        splunk-index: logs_storeapp_docker
     depends_on:
       - db
   
-  #logging:
-  #  driver: splunk
-  #  options:
-  #    splunk-source: store-api
-  #    splunk-format: "json"
-  #    splunk-url: https://splunk:8088
-  #    splunk-token: eyJraWQiOiJzcGx1bmsuc2VjcmV0IiwiYWxnIjoiSFM1MTIiLCJ2ZXIiOiJ2MiIsInR0eXAiOiJzdGF0aWMifQ.eyJpc3MiOiJhZG1pbiBmcm9tIHNwbHVuayIsInN1YiI6ImFkbWluIiwiYXVkIjoiZXZlcnlib2R5IiwiaWRwIjoiU3BsdW5rIiwianRpIjoiMGMzMjI5NmJjMDA3YWI4NmIzMWY2MDA0Mzk3Y2VhZjI0YzNlOTM3YTY3NmE3ZjQyY2MxZDk3NDVjNDBmYzBkNiIsImlhdCI6MTcyMjE0MTgxOSwiZXhwIjoxNzI0NzMzODE5LCJuYnIiOjE3MjIxNDE4MTl9.bRFq30xzaTW235KyInLB_0YQRXXjRMr13cweuv0TMrK4i5n91NSPwojnUgze26N4yEsPZqBmZLoKpMb8c_sLbw
-  #    splunk-insecureskipverify: "true"
-  #    splunk-verify-connection: "false"
-  #    splunk-index: store
 
 volumes:
   pg-data:
