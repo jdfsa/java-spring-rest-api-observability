@@ -235,7 +235,7 @@ No caso do LogBack, uma das formas de instrumentação é através da parametriz
 ```
 
 
-# Plus: integrando ao Elastic Search
+# Plus: integrando ao Elastic Search via Docker
 
 ## passo 1
 Instale o pluging do Elastic Search para integrá-lo ao log driver.
@@ -263,4 +263,198 @@ services:
       user: elastic
       password: changeme
       index: storeapp
+```
+
+# Plus: integrando ao Splunk com Appender do Logback
+ref: https://github.com/splunk/splunk-library-javalogging/blob/main/src/test/resources/logback.xml
+
+## passo 1
+Além das bibliotecas do Logstash que adicionamos anteriormente, inclus a biblioteca de logging do Splunk no `pom.xml`:
+
+```xml
+<dependency>
+    <groupId>com.splunk.logging</groupId>
+    <artifactId>splunk-library-javalogging</artifactId>
+    <version>1.9.0</version>
+</dependency>
+```
+
+Aparentemente o Splunk não está disponível mais no repositório do Maven. Para baixar suas bibliotecas, é necessário incluir o link do repositório do Artifactory do Splunk no arquivo de `.m2/settings.xml` ou no próprio `pom.xml`:
+
+```xml
+<repositories>
+    <!-- repositório do maven (padrão) -->
+    <repository>
+        <id>maven2</id>
+        <name>Maven 2</name>
+        <url>https://repo.maven.apache.org/maven2</url>
+        <releases>
+            <enabled>true</enabled>
+        </releases>
+        <snapshots>
+            <enabled>false</enabled>
+        </snapshots>
+    </repository>
+
+    <!-- repositório adicional: Splunk -->
+    <repository>
+        <id>splunk</id>
+        <name>Splunk Artifactory</name>
+        <url>https://splunk.jfrog.io/splunk/ext-releases-local</url>
+        <releases>
+            <enabled>true</enabled>
+        </releases>
+        <snapshots>
+            <enabled>false</enabled>
+        </snapshots>
+    </repository>
+</repositories>
+```
+
+
+## passo 2
+Configure o arquivo `logback.xml` da seguinte maneira:
+
+```xml
+<configuration>
+
+    <import class="net.logstash.logback.layout.LogstashLayout" />
+    <import class="com.splunk.logging.HttpEventCollectorLogbackAppender" />
+
+    <appender name="splunk_http" class="HttpEventCollectorLogbackAppender">
+        <url>http://localhost:8088</url>
+        <token>52109e0f-30a6-432c-9433-3209125fe726</token>
+        <sourcetype>logback</sourcetype>
+        <index>logs_storeapp</index>
+        <messageFormat>text</messageFormat>
+        <middleware>HttpEventCollectorUnitTestMiddleware</middleware>
+        <connectTimeout>5000</connectTimeout>
+        <terminationTimeout>2000</terminationTimeout>
+        <layout class="LogstashLayout" />
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="splunk_http" />
+    </root>
+
+</configuration>
+```
+
+**OBS**: os parâmetros `<url>`, `<token>` e `<index>` devem ser obtidos conforme ambiente do Spluk. Especificamente para o token e index, siga o passo a passo a seguir.
+
+### Splunk: criando índice
+
+1. vá para o menu `Settings`
+2. no grupo `Data`, vá para `Indexes`
+3. clique em `New Index`
+4. informe o nome do índice em `Index Name` (ex: logs_vendorservice, raw_salesapp)
+5. parametrize demais dados que fizerem sentido, ou apenas deixe tudo como default
+6. clique em `Save`
+
+
+### Splunk: configuração de token
+
+1. vá para o menu `Settings`
+2. no grupo `Data`, vá para `Data inputs`
+3. em `Local inputs` > `Type`, clique em `+ Add new` na opção `HTTP Event Collector`
+4. informe o nome em `Name` que seja possível identificar (sugestão: utilize um nome similar ao índice para facilitar a gestão)
+5. clique em `Next`
+6. selecione o índice default (criado anteriormente)
+7. clique em `Review` e depois em `Submit`
+
+
+## passo 3
+Vá para `Apps` > `Searching & Reporting` e faça uma busca no splunk.
+
+```shell
+index=logs_storeapp
+| spath
+| search properties.appName=store-observability properties.appVersion="0.0.*" severity=ERROR
+```
+
+
+# Plus: integrando ao Elastic Search com Appender do LogBack
+ref: https://github.com/internetitem/logback-elasticsearch-appender
+
+## passo 1
+Instale a dependência no `pom.xml`
+
+```xml
+<!-- logback appender - ElasticSearch -->
+<dependency>
+    <groupId>com.internetitem</groupId>
+    <artifactId>logback-elasticsearch-appender</artifactId>
+    <version>1.6</version>
+</dependency>
+```
+
+## passo 2
+Configure o appender no `logback.xml`
+
+```xml
+<configuration>
+    <import class="com.internetitem.logback.elasticsearch.ElasticsearchAppender" />
+    
+    <appender name="ELASTIC" class="ElasticsearchAppender">
+        <url>https://localhost:9200</url>
+        <index>logs-%date{yyyy-MM-dd}</index>
+        <type>tester</type>
+        <loggerName>es-logger</loggerName> <!-- optional -->
+        <errorLoggerName>es-error-logger</errorLoggerName> <!-- optional -->
+        <connectTimeout>30000</connectTimeout> <!-- optional (in ms, default 30000) -->
+        <errorsToStderr>false</errorsToStderr> <!-- optional (default false) -->
+        <includeCallerData>false</includeCallerData> <!-- optional (default false) -->
+        <logsToStderr>false</logsToStderr> <!-- optional (default false) -->
+        <maxQueueSize>104857600</maxQueueSize> <!-- optional (default 104857600) -->
+        <maxRetries>3</maxRetries> <!-- optional (default 3) -->
+        <readTimeout>30000</readTimeout> <!-- optional (in ms, default 30000) -->
+        <sleepTime>250</sleepTime> <!-- optional (in ms, default 250) -->
+        <rawJsonMessage>false</rawJsonMessage> <!-- optional (default false) -->
+        <includeMdc>true</includeMdc> <!-- optional (default false) -->
+        <maxMessageSize>100</maxMessageSize> <!-- optional (default -1 -->
+        <authentication class="com.internetitem.logback.elasticsearch.config.BasicAuthentication" /> <!-- optional -->
+        <properties>
+            <property>
+                <name>host</name>
+                <value>${HOSTNAME}</value>
+                <allowEmpty>false</allowEmpty>
+            </property>
+            <property>
+                <name>severity</name>
+                <value>%level</value>
+            </property>
+            <property>
+                <name>thread</name>
+                <value>%thread</value>
+            </property>
+            <property>
+                <name>stacktrace</name>
+                <value>%ex</value>
+            </property>
+            <property>
+                <name>logger</name>
+                <value>%logger</value>
+            </property>
+        </properties>
+        <headers>
+            <header>
+                <name>Content-Type</name>
+                <value>application/json</value>
+            </header>
+        </headers>
+    </appender>
+
+    <logger name="es-logger" level="INFO" additivity="false">
+        <appender name="ES_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <!-- ... -->
+            <encoder>
+                <pattern>%msg</pattern> <!-- This pattern is important, otherwise it won't be the raw Elasticsearch format anyomre -->
+            </encoder>
+        </appender>
+    </logger>
+
+    <root level="info">
+        <appender-ref ref="ELASTIC" />
+    </root>
+</configuration>
 ```

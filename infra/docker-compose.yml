@@ -43,13 +43,6 @@ services:
   #    splunk-verify-connection: "false"
   #    splunk-index: store
 
-  #splunk:
-  #  extends:
-  #    file: docker-compose-splunk.yml
-  #    service: splunk
-
 volumes:
   pg-data:
     name: postgres-container_pgdata
-  splunk-etc:
-  splunk-var:
