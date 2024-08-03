@@ -21,6 +21,19 @@
 
 	<dependencies>
 
+		<!-- built-in endpoints, como: /metrics e /health -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
+		<!-- Micrometer para métricas -->
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+
 		<!-- LogBack core, possui as funcionalidades básicas de escrita e formatação -->
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
