@@ -14,7 +14,6 @@ services:
   splunk:
     image: splunk/splunk:latest
     hostname: splunk
-    user: root
     environment:
       SPLUNK_START_ARGS: --accept-license --no-prompt --answer-yes
       SPLUNK_USERNAME: admin

@@ -21,23 +21,17 @@ services:
       - DB_HOST=db
       - DB_PORT=5432
     ports:
-      - 28080:8080
+      - 8080:8080
     logging:
-      #driver: elastic/elastic-logging-plugin:8.7.1
-      #options:
-      #  hosts: https://localhost:9200
-      #  user: elastic
-      #  password: changeme
-      #  index: storeapp
       driver: splunk
       options:
+        splunk-url: http://localhost:8088
+        splunk-token: 2eca5c79-812d-40f1-b93d-6e8aee67e571
+        splunk-index: logs_storeapi_docker
         splunk-source: store-api
         splunk-format: "json"
-        splunk-url: http://localhost:8088
-        splunk-token: 68847334-5857-4c07-b03b-a4a251400d04
         splunk-insecureskipverify: "true"
         splunk-verify-connection: "false"
-        splunk-index: logs_storeapp_docker
     depends_on:
       - db
   

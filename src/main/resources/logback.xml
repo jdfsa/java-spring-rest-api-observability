@@ -115,9 +115,9 @@
 
     <appender name="splunk_http" class="HttpEventCollectorLogbackAppender">
         <url>http://localhost:8088</url>
-        <token>52109e0f-30a6-432c-9433-3209125fe726</token>
+        <token>09d51214-0e39-45ff-a00f-882b4431eb9d</token>
+        <index>logs_storeapi_local</index>
         <sourcetype>logback</sourcetype>
-        <index>logs_storeapp</index>
         <messageFormat>text</messageFormat>
         <middleware>HttpEventCollectorUnitTestMiddleware</middleware>
         <connectTimeout>5000</connectTimeout>
@@ -143,7 +143,8 @@
     <logger name="store" level="DEBUG" />
 
     <root level="INFO">
-        <appender-ref ref="stdout_json" />
+        <!--<appender-ref ref="stdout_json" />-->
+        <appender-ref ref="stdout_plain" />
         <appender-ref ref="splunk_http" />
         <!--<appender-ref ref="elastic" />-->
         <!--<appender-ref ref="FILE" />-->

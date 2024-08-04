@@ -237,6 +237,68 @@ No caso do LogBack, uma das formas de instrumentação é através da parametriz
 ```
 
 
+# Plus: integrando ao Splunk Search via Docker
+
+## passo 1 - subir a infra
+Suba a infra do Splunk, conforme exemplos na documentação: https://splunk.github.io/docker-splunk/EXAMPLES.html
+
+## passo 2 - criar índice e token
+
+Realize os procedimentos a seguir e anote:
+* ***token*** do HTTP Collector
+* ***índice*** que será usado na busca 
+
+### Splunk: criando índice
+
+1. vá para o menu `Settings`
+2. no grupo `Data`, vá para `Indexes`
+3. clique em `New Index`
+4. informe o nome do índice em `Index Name` (ex: logs_vendorservice, raw_salesapp)
+5. parametrize demais dados que fizerem sentido, ou apenas deixe tudo como default
+6. clique em `Save`
+
+
+### Splunk: configuração de token
+
+1. vá para o menu `Settings`
+2. no grupo `Data`, vá para `Data inputs`
+3. em `Local inputs` > `Type`, clique em `+ Add new` na opção `HTTP Event Collector`
+4. informe o nome em `Name` que seja possível identificar (sugestão: utilize um nome similar ao índice para facilitar a gestão)
+5. clique em `Next`
+6. selecione o índice default (criado anteriormente)
+7. clique em `Review` e depois em `Submit`
+
+
+## passo 3 - instrumentação
+Configure o LogDriver para a aplicação. Exemplo utilizando `docker-compose.yml`:
+
+```yaml
+services:
+  app:
+    #...
+    logging:
+      driver: splunk
+      options:
+        splunk-url: http://<host>:8088
+        splunk-index: <index name>
+        splunk-token: <token xxxx-yyyy-zzzz>
+        splunk-source: <app name>
+        splunk-format: "json"
+        splunk-insecureskipverify: "true"
+        splunk-verify-connection: "false"
+```
+
+## passo 3
+Vá para `Apps` > `Searching & Reporting` e faça uma busca no splunk.
+
+```shell
+index=logs_storeapp
+| spath
+| search properties.appName=store-observability properties.appVersion="0.0.*" severity=ERROR
+```
+
+
+
 # Plus: integrando ao Elastic Search via Docker
 
 ## passo 1
