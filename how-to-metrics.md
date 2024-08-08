@@ -1,11 +1,5 @@
 # Instrumentação de Metrics
 
-docs
-* https://github.com/docker/awesome-compose/tree/master/prometheus-grafana
-* https://github.com/aha-oretama/spring-boot-prometheus-grafana-sample/blob/master/docker-compose.yml
-* https://www.tutorialworks.com/spring-boot-prometheus-micrometer/
-* https://medium.com/@aleksanderkolata/spring-boot-micrometer-prometheus-and-grafana-how-to-add-custom-metrics-to-your-application-712c6f895f6b
-
 ## passo 1
 Inclua as dependências no arquivo `pom.xml`:
 
@@ -35,3 +29,29 @@ management.endpoints.web.exposure.include: health,info,metrics,prometheus
 ## passo 3
 Execute a aplicação e valide se rota `/actuator/prometheus` está acessível
 
+
+## passo 4
+Acesse o prometheus (localmente: `http://localhost:9090`) e execute as queries
+
+```prometheus
+# todas requisições com status 4xx e 5xx
+http_server_requests_seconds_count{status =~ '4.+'}
+http_server_requests_seconds_count{status =~ '5.+'}
+
+# todas as requisições, exceto /actuator/prometheus
+http_server_requests_seconds_count{uri !~ ".+prometheus"}
+
+# múltiplos filtros: url exceto prometheus e status 2xx
+http_server_requests_seconds_count{uri !~ ".+prometheus", status =~ "2.+"}
+
+# múltiplos filtros: url exceto prometheus/metrics/health e status 2xx
+http_server_requests_seconds_count{uri !~ ".+prometheus|.+metrics|.+health", status =~ "2.+"}
+
+# requisições 2xx em relação ao tempo (resolução)
+http_server_requests_seconds_sum{uri !~ ".+prometheus|.+metrics|.+health", status =~ "2.+"}
+```
+
+
+## docs
+* https://github.com/docker/awesome-compose/tree/master/prometheus-grafana
+* https://prometheus.io/docs/tutorials/understanding_metric_types/
