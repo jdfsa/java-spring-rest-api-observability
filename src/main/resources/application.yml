@@ -4,10 +4,13 @@ management:
   endpoints.web.exposure.include: health,info,metrics,prometheus
   metrics:
     tags:
-      application: store api
-    export:
-      prometheus:
+      application: store-api
+  prometheus:
+    metrics:
+      export:
         pushgateway:
           enabled: true
           base-url: http://localhost:9091
-          shutdown-operation: push
+          shutdown-operation: POST
+          push-rate: PT10S
+          job: store-api-push

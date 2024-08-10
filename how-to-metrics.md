@@ -1,7 +1,6 @@
 # Instrumentação de Metrics
 
-
-## passo 1
+## passo 1 - dependências
 Inclua as dependências no arquivo `pom.xml`:
 
 ```xml
@@ -20,7 +19,7 @@ Inclua as dependências no arquivo `pom.xml`:
 ```
 
 
-## passo 2
+## passo 2 - properties
 Exponha a rota do prometheus (e outras rotas) via arquivo `application.yml` / `application.properties` ou variável de ambiente. Ex via `application.yml`:
 
 ```yaml
@@ -29,7 +28,7 @@ management.endpoints.web.exposure.include: health,info,metrics,prometheus
 ```
 
 
-## passo 3
+## passo 3 - testando as rotas
 Acesse a rota `/actuator` e confira se as rotas `/actuator/metrics` e `/actuator/prometheus` estão habilitadas. Se estiverem, elas aparecerão na lista, conforme exemplo:
 
 ```json
@@ -75,7 +74,7 @@ Você pode acessar as rotas diretamente, ex:
 
 
 
-## passo 4 - /metrics
+## passo 4 - uso da rota /metrics
 
 É possível realizar queries sobre as métricas através da rota `/atuator/metrics`.
 
@@ -93,15 +92,18 @@ Query: filtro combinado de JVM memory por `area = heap` e `id = G1 Old Gen`
 
 
 
-## passo 5 - /prometheus
+## passo 5 - uso da rota /prometheus
 
 Em vez de ter que realizar queries uma a uma, o micrometer já expõe essas métricas em uma única consulta, no formato compatível com o prometheus.
 
-Configure o serviço do Prometheus para capturar as métricas expostas pela API:
+Vamos vamos configurar a infra do Prometheus para executar localmente via `docker compose`.
+
+Configure o arquivo `prometheus/prometheus.yml` conforme o exemplo a seguir, para instruir o prometheus sobre o local onde ele deve buscar as métricas:
 
 ```yaml
 scrape_configs:
-  - job_name: 'StoreAppMetrics'
+
+  - job_name: 'store-api-pull'
     metrics_path: '/actuator/prometheus'
     scrape_interval: 3s
     static_configs:
@@ -110,7 +112,30 @@ scrape_configs:
           application: 'store-api'
 ```
 
-Após executar o prometheus, acesese o prometheus (ex: localmente `http://localhost:9090`) e execute algumas queries:
+Configure o `docker-compose.yml` com o serviço do prometheus, conforme exemplo a seguir:
+
+```yaml
+services:
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prom_data:/prometheus
+
+volumes:
+  prom_data:
+  alertmanager-data:
+```
+
+
+Após executar `docker compose up -d` para subir o serviço do prometheus, com a aplicação executando, acesse `http://localhost:9090` e execute algumas queries:
 
 ```shell
 # todas requisições com status 4xx e 5xx
@@ -133,7 +158,7 @@ http_server_requests_seconds_sum{uri !~ ".+prometheus|.+metrics|.+health", statu
 
 # Plus: Prometheus com push Gateway
 
-Nem sempre é possível expor um endpoint que seja acessível pelo Prometheus. Por exemplo, você pode ter aplicações batch ou workers que são estimulados de forma ad-hoc, agendados ou a partir de eventos de fila, que podem executar em infraestrutura mais tradicional, como servidores/VMs Linux e Windows.
+Nem sempre é possível expor um endpoint que seja acessível pelo Prometheus. Por exemplo, você pode ter aplicações batch ou workers que são estimulados de forma ad-hoc, agendados ou a partir de eventos de fila, que podem executar em infraestrutura mais tradicional, como servidores/VMs Linux e Windows. E mesmo utilizando um ambiente conteinerizado, pode haver alguma limitação que torne a configuração muito complexa, por exemplo o service discovery para acesso à aplicação com as métricas, considerando a vida curta das aplicações.
 
 Nesse caso você precisa instrumentar a aplicação para enviar proativamente as métricas ao Prometheus através do recurso chamado Push Gateway.
 
@@ -170,22 +195,22 @@ Além das dependências já adicionadas, inclua no `pom.xml` a lib `io.prometheu
 No arquivo `src/main/resources/application.yml`, configure a integração com o pushgateway:
 
 ```yaml
+server.port: 8080
 spring.application.name: store-api
-server.port: 28080
 management:
   endpoints.web.exposure.include: health,info,metrics,prometheus
-  metrics:
-    tags:
-      application: store api
-    export:
-      prometheus:
+  prometheus:
+    metrics:
+      export:
         pushgateway:
           enabled: true
           base-url: http://localhost:9091
-          shutdown-operation: push
+          shutdown-operation: POST
+          push-rate: PT10S
+          job: store-api-push
 ```
 
-Adicione a classe de configuração (`@Configuration`) para configurar o componente de integração com o pushgateway:
+**Opcionalmente** você pode aplicar alguma customização do lado do código. Para isso, crie uma classe de configuração (`@Configuration`), conforme o exemplo a seguir:
 
 ```java
 import io.micrometer.core.aop.TimedAspect;
@@ -199,18 +224,15 @@ import org.springframework.boot.actuate.metrics.export.prometheus.PrometheusPush
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import org.springframework.core.env.Environment;
 
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.time.Duration;
-import java.util.Map;
 
 @Configuration
 public class PushGatewayConfiguration {
 
     @Value("${spring.application.name}")
-    private String appName;
+    private String applicationName;
 
     @Bean
     public MeterRegistryCustomizer<MeterRegistry> metricsCommonTags(@Value("${spring.profiles.active:default}") String activeEnvProfile) {
@@ -227,25 +249,18 @@ public class PushGatewayConfiguration {
 
     @Bean
     @Primary
-    public PrometheusPushGatewayManager prometheusPushGatewayManager(CollectorRegistry collectorRegistry,
-                                                                     PrometheusProperties prometheusProperties,
-                                                                     Environment environment) throws MalformedURLException {
-        PrometheusProperties.Pushgateway properties = prometheusProperties.getPushgateway();
-        Duration pushRate = properties.getPushRate();
-        String job = appName;
-        Map<String, String> groupingKey = properties.getGroupingKey();
-        PrometheusPushGatewayManager.ShutdownOperation shutdownOperation = properties.getShutdownOperation();
-        return new PrometheusPushGatewayManager(
-                this.getPushGateway(properties.getBaseUrl()),
-                collectorRegistry,
-                pushRate,
-                job,
-                groupingKey,
-                shutdownOperation);
-    }
+    public PrometheusPushGatewayManager prometheusPushGatewayManager(
+            CollectorRegistry collectorRegistry,
+            PrometheusProperties prometheusProperties) throws MalformedURLException {
 
-    private PushGateway getPushGateway(String url) throws MalformedURLException {
-        return new PushGateway(URI.create(url).toURL());
+        final PrometheusProperties.Pushgateway properties = prometheusProperties.getPushgateway();
+        return new PrometheusPushGatewayManager(
+                new PushGateway(URI.create(properties.getBaseUrl()).toURL()),
+                collectorRegistry,
+                properties.getPushRate(),
+                applicationName,
+                properties.getGroupingKey(),
+                properties.getShutdownOperation());
     }
 }
 ```
