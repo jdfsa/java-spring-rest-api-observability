@@ -1,4 +1,5 @@
 scrape_configs:
+
   - job_name: 'StoreAppMetrics'
     metrics_path: '/actuator/prometheus'
     scrape_interval: 3s
@@ -6,3 +7,9 @@ scrape_configs:
       - targets: ['host.docker.internal:8080']
         labels:
           application: 'store-api'
+
+  - job_name: 'pushgateway'
+    honor_labels: true
+    scrape_interval: 500ms
+    static_configs:
+      - targets: ['pushgateway:9091']

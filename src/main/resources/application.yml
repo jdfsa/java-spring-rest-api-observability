@@ -1,1 +1,13 @@
-management.endpoints.web.exposure.include: health,info,metrics,prometheus
+server.port: 8080
+spring.application.name: store-api
+management:
+  endpoints.web.exposure.include: health,info,metrics,prometheus
+  metrics:
+    tags:
+      application: store api
+    export:
+      prometheus:
+        pushgateway:
+          enabled: true
+          base-url: http://localhost:9091
+          shutdown-operation: push

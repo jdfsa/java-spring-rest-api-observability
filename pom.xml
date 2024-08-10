@@ -34,6 +34,12 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<!-- Pushgateway para envio proativo das métricas ao Prometheus -->
+		<dependency>
+			<groupId>io.prometheus</groupId>
+			<artifactId>simpleclient_pushgateway</artifactId>
+		</dependency>
+
 		<!-- LogBack core, possui as funcionalidades básicas de escrita e formatação -->
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
