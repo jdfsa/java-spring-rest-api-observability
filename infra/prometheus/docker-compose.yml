@@ -36,7 +36,7 @@ services:
       org.label-schema.group: "monitoring"
 
   alertmanager:
-    image: prom/alertmanager:v0.23.0
+    image: prom/alertmanager
     restart: unless-stopped
     ports:
       - "9093:9093"

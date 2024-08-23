@@ -2,6 +2,7 @@ services:
 
   db:
     image: postgres
+    restart: unless-stopped
     env_file:
       - ./pg/posgresql.env
     volumes:
@@ -11,6 +12,7 @@ services:
 
   api:
     container_name: api
+    restart: unless-stopped
     build:
       context: ../
       dockerfile: Dockerfile
@@ -26,8 +28,8 @@ services:
       driver: splunk
       options:
         splunk-url: http://localhost:8088
-        splunk-token: 2eca5c79-812d-40f1-b93d-6e8aee67e571
-        splunk-index: logs_storeapi_docker
+        splunk-index: logs_storeapp
+        splunk-token: 2b8a7c87-713e-48a0-845b-a62e6b7ecb63
         splunk-source: store-api
         splunk-format: "json"
         splunk-insecureskipverify: "true"

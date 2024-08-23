@@ -145,7 +145,7 @@
     <root level="INFO">
         <!--<appender-ref ref="stdout_json" />-->
         <appender-ref ref="stdout_plain" />
-        <appender-ref ref="splunk_http" />
+        <!--<appender-ref ref="splunk_http" />-->
         <!--<appender-ref ref="elastic" />-->
         <!--<appender-ref ref="FILE" />-->
     </root>

@@ -25,6 +25,13 @@ Exponha a rota do prometheus (e outras rotas) via arquivo `application.yml` / `a
 ```yaml
 # expondo rotas: /actuator/<health, info, metrics, prometheus>
 management.endpoints.web.exposure.include: health,info,metrics,prometheus
+
+# o base path padrão é /actuator, mas você pode alterar através do seguinte parâmetro
+management.endpoints.web.base-path: /actuator
+
+# para exibir o histograma de latência de requisições, use a seguinte configuraçao
+# https://docs.spring.io/spring-boot/reference/actuator/metrics.html#actuator.metrics.export.prometheus
+management.metrics.distribution.slo[http.server.requests]: "25ms, 50ms, 100ms, 200ms, 400ms, 800ms, 1500ms"
 ```
 
 
@@ -131,7 +138,6 @@ services:
 
 volumes:
   prom_data:
-  alertmanager-data:
 ```
 
 
@@ -154,6 +160,133 @@ http_server_requests_seconds_count{uri !~ ".+prometheus|.+metrics|.+health", sta
 # requisições 2xx em relação ao tempo (resolução)
 http_server_requests_seconds_sum{uri !~ ".+prometheus|.+metrics|.+health", status =~ "2.+"}
 ```
+
+
+# Criando métricas customizadas
+
+## passo 1 - dependência
+Adicione a dependência do micrometer core:
+
+```xml
+<!-- https://mvnrepository.com/artifact/io.micrometer/micrometer-core -->
+<dependency>
+    <groupId>io.micrometer</groupId>
+    <artifactId>micrometer-core</artifactId>
+</dependency>
+```
+
+## passo 2 - MeterRegistry
+Na classe onde você quer contabilizar as métricas customizadas, inclua o @Bean preferencialmente utilizando algum mecanismo de injeção de dependências.
+
+**Exemplo 1** - construtor:
+
+```java
+private final MeterRegistry meterRegistry;
+
+// construtor
+public ClassEspecifica(final MeterRegistry meterRegistry, ...) {
+  this.meterRegistry = meterRegistry;
+  // ... demais configurações da classe
+}
+```
+
+**Exemplo 2** - Spring Boot autowired:
+
+```java
+@Autowired
+private MeterRegistry meterRegistry;
+```
+
+## passo 3 - coleta de métricas
+
+### Counter
+
+Pode apenas aumentar ou resetar, ex: número de requisições, quantidade de erros, etc.
+
+```java
+final Counter counterMetricaCustomizada;
+
+// construtor
+public ClassEspecifica(...) {
+  // ...
+  counterMetricaCustomizada = Counter.builder("<NOME DA MÉTRICA>")
+    .tag("<TAG 1>", "<VALOR DA TAG 1>")
+    .tag("<TAG 2>", "<VALOR DA TAG 2>")
+    .description("<DESCRIÇÃO QUE EXPLICA A MÉTRICA>")
+    .register(meterRegistry);
+}
+
+public void metodoDaClasse(...) {
+  // lógica do método
+  // ....
+  counterMetricaCustomizada.increment();
+}
+```
+
+### Gauge
+
+Pode aumentar ou diminuir, útil para métricas como número de pods/tasks em um cluster, quantidade de mensagens em uma fila, etc.
+
+```java
+final AtomicInteger gaugeValueMetricaCustomizada;
+
+// construtor
+public ClassEspecifica(...) {
+  // ...
+  Gauge.builder("<NOME DA METRICA>", gaugeValueMetricaCustomizada::get)
+    .description("<DESCRIÇÃO DA MÉTRICA>")
+    .register(meterRegistry);
+}
+
+public void metodoDaClasse(...) {
+  // lógica do método
+  // ....
+  gaugeValueMetricaCustomizada.set(<NOVO VALOR>);
+}
+```
+
+
+# Métricas com grafana
+
+O Prometheus permite que você realize consultas sobre as métricas capturadas e armazenadas em sua camadade storage, mas ele não consegue entregar a usabilidade e vesatilidade de um sistema especializado em UI.
+
+Com o Grafana você pode configurar dashboards e alarmes sofisticados, utilizando o Prometheus e muitos outros sistemas como fonte de dados.
+
+## passo 1 - infra docker
+
+Você pode subir o serviço do Grafana utilizando o seguinte trecho de código do docker compose.
+
+```yaml
+grafana:
+  image: grafana/grafana
+  container_name: grafana
+  ports:
+    - 3000:3000
+  restart: unless-stopped
+  environment:
+    - GF_SECURITY_ADMIN_USER=admin
+    - GF_SECURITY_ADMIN_PASSWORD=grafana
+  volumes:
+    - ./grafana:/etc/grafana/provisioning/datasources
+```
+
+Você pode conectar o Grafana a múltiplas fontes de dados. Para integrá-lo ao Prometheus em tempo de inicialização, crie o arquivo `grafana/datasources.yml` coma seguinte estrutura (esse arquivo está sendo referenciado no trecho do docker compose):
+
+```yaml
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+```
+
+## passo 2 - toques finais na aplicação
+
+Uma solução de monitoramento mais assertiva precisa ter minimamente as métricas relacionadas aos 4 golden signals.
+
+
 
 
 # Plus: Prometheus com push Gateway
@@ -182,10 +315,33 @@ services:
     org.label-schema.group: "monitoring"
 ```
 
+Configure o Prometheus para buscar as métricas na API do pushgateway no arquivo `prometheus/prometheus.yml`:
+
+```yaml
+scrape_configs:
+  # ...
+  # outros jobs
+  # ...
+  - job_name: 'pushgateway'
+    honor_labels: true
+    scrape_interval: 3s
+    static_configs:
+      - targets: ['pushgateway:9091']
+
+```
+
+Reinicie os serviços via docker compose, ex:
+
+```shell
+docker compose up -d
+```
+
+
 ## passo 2 - instrumentação da aplicação
 Além das dependências já adicionadas, inclua no `pom.xml` a lib `io.prometheus.simpleclient_pushgateway`:
 
 ```xml
+<!-- Pushgatweay para envio proativo das métricas ao Prometheus -->
 <dependency>
     <groupId>io.prometheus</groupId>
     <artifactId>simpleclient_pushgateway</artifactId>
@@ -206,11 +362,11 @@ management:
           enabled: true
           base-url: http://localhost:9091
           shutdown-operation: POST
-          push-rate: PT10S
+          push-rate: PT1S
           job: store-api-push
 ```
 
-**Opcionalmente** você pode aplicar alguma customização do lado do código. Para isso, crie uma classe de configuração (`@Configuration`), conforme o exemplo a seguir:
+Por default a lib `io.prometheus.simpleclient_pushgateway` inicializa um `@Bean` (objeto) do `PrometheusPushGatewayManager`, componente responsável por integrar efetivamente com o serviço do Pushgateway. Caso queira **opcionalmente** customizar a criação desse componente, você pode criar uma classe de configuração (`@Configuration`) conforme o exemplo a seguir:
 
 ```java
 import io.micrometer.core.aop.TimedAspect;
@@ -235,19 +391,6 @@ public class PushGatewayConfiguration {
     private String applicationName;
 
     @Bean
-    public MeterRegistryCustomizer<MeterRegistry> metricsCommonTags(@Value("${spring.profiles.active:default}") String activeEnvProfile) {
-        return registry -> registry.config()
-                .commonTags(
-                        "env", activeEnvProfile
-                );
-    }
-
-    @Bean
-    public TimedAspect timedAspect(MeterRegistry registry) {
-        return new TimedAspect(registry);
-    }
-
-    @Bean
     @Primary
     public PrometheusPushGatewayManager prometheusPushGatewayManager(
             CollectorRegistry collectorRegistry,
@@ -262,12 +405,22 @@ public class PushGatewayConfiguration {
                 properties.getGroupingKey(),
                 properties.getShutdownOperation());
     }
+
+     @Bean
+    public MeterRegistryCustomizer<MeterRegistry> metricsCommonTags(@Value("${spring.profiles.active:default}") String activeEnvProfile) {
+        return registry -> registry.config()
+                .commonTags(
+                        "env", activeEnvProfile
+                );
+    }
+
+    @Bean
+    public TimedAspect timedAspect(MeterRegistry registry) {
+        return new TimedAspect(registry);
+    }
+
 }
 ```
-
-
-## 
-
 
 
 # Plus: Alert manager

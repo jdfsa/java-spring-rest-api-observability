@@ -386,11 +386,11 @@ Configure o arquivo `logback.xml` da seguinte maneira:
     <import class="com.splunk.logging.HttpEventCollectorLogbackAppender" />
 
     <appender name="splunk_http" class="HttpEventCollectorLogbackAppender">
-        <url>http://localhost:8088</url>
-        <token>52109e0f-30a6-432c-9433-3209125fe726</token>
+        <url>http://<HOST>:8088</url>
+        <token>TOKEN</token>
         <sourcetype>logback</sourcetype>
-        <index>logs_storeapp</index>
-        <messageFormat>text</messageFormat>
+        <index>INDICE</index>
+        <messageFormat>json</messageFormat>
         <middleware>HttpEventCollectorUnitTestMiddleware</middleware>
         <connectTimeout>5000</connectTimeout>
         <terminationTimeout>2000</terminationTimeout>

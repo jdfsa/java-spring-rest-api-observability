@@ -4,10 +4,15 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.MediaTypes;
@@ -28,16 +33,33 @@ import store.product.ProductRepository;
 
 @Slf4j
 @RestController
-@RequiredArgsConstructor
 public class OrderController {
 
 	private final OrderModelAssembler assembler;
 	private final OrderRepository orderRepository;
 	private final ProductRepository productRepository;
+	private final MeterRegistry meterRegistry;
+
+	final Counter counterQuantidadeNovasSolicitacoes;
+	final AtomicInteger gaugeValueProdutosAdquiridos = new AtomicInteger();
+
+    public OrderController(OrderModelAssembler assembler, OrderRepository orderRepository, ProductRepository productRepository, MeterRegistry meterRegistry) {
+        this.assembler = assembler;
+        this.orderRepository = orderRepository;
+        this.productRepository = productRepository;
+        this.meterRegistry = meterRegistry;
+
+		this.counterQuantidadeNovasSolicitacoes = Counter.builder("app_custom_quantidade_novas_solicitacoes")
+				.description("quantidade de novas solicitações efetuadas")
+				.register(meterRegistry);
+
+		Gauge.builder("app_custom_metric_quantidade_de_produtos", gaugeValueProdutosAdquiridos::get)
+				.description("Quantidade de produtos adquiridos")
+				.register(meterRegistry);
+    }
 
 	@GetMapping("/orders")
 	public CollectionModel<EntityModel<Order>> all() {
-
 		final List<EntityModel<Order>> orders = orderRepository.findAll().stream()
 				.map(assembler::toModel)
 				.collect(Collectors.toList());
@@ -63,6 +85,7 @@ public class OrderController {
 	public ResponseEntity<EntityModel<Order>> newOrder(final @RequestBody Order order) {
 		log.info("requested new order");
 
+
 		if (CollectionUtils.isEmpty(order.getItems())) {
 			log.info("order request with no items");
 			log.debug("detailed request: {}", order);
@@ -77,7 +100,7 @@ public class OrderController {
 			final Long productId = item.getProduct().getId();
 			final Product product = productRepository.findById(productId)
 					.orElseThrow(() -> new OrderItemProductNotFoundException(productId));
-			final BigDecimal productPrice = product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity() + 1));
+			final BigDecimal productPrice = product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
 			item.setProduct(product);
 			totalPrice = totalPrice.add(productPrice);
 		}
@@ -87,6 +110,14 @@ public class OrderController {
 		final Order newOrder = orderRepository.save(order);
 
 		log.debug("order saved successfully: {}", newOrder);
+
+		// ------ métricas ----------------------------
+		counterQuantidadeNovasSolicitacoes.increment();
+		gaugeValueProdutosAdquiridos.set(order.getItems().stream()
+				.map(OrderItem::getQuantity)
+				.reduce(Integer::sum)
+				.orElse(0));
+		// --------------------------------------------
 
 		return ResponseEntity
 				.created(linkTo(methodOn(OrderController.class).one(newOrder.getId())).toUri())
