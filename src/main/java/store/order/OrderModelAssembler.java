@@ -16,7 +16,7 @@ public class OrderModelAssembler implements RepresentationModelAssembler<Order, 
 
 		EntityModel<Order> orderModel = EntityModel.of(order,
 				linkTo(methodOn(OrderController.class).one(order.getId())).withSelfRel(),
-				linkTo(methodOn(OrderController.class).all()).withRel("orders"));
+				linkTo(methodOn(OrderController.class).all(0, 100)).withRel("orders"));
 
 		// Conditional links based on state of the order
 

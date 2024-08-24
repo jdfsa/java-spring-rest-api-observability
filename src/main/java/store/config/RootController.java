@@ -17,7 +17,7 @@ public class RootController {
 
 		RepresentationModel<?> rootModel = new RepresentationModel<>();
 		rootModel.add(linkTo(methodOn(CustomerController.class).all()).withRel("employees"));
-		rootModel.add(linkTo(methodOn(OrderController.class).all()).withRel("orders"));
+		rootModel.add(linkTo(methodOn(OrderController.class).all(0, 100)).withRel("orders"));
 		rootModel.add(linkTo(methodOn(ProductController.class).all()).withRel("products"));
 		return rootModel;
 	}
