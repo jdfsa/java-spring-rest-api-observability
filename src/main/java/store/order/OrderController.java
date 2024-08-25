@@ -3,19 +3,16 @@ package store.order;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.MediaTypes;
@@ -35,15 +32,23 @@ public class OrderController {
 	private final OrderModelAssembler assembler;
 	private final OrderRepository orderRepository;
 	private final ProductRepository productRepository;
+	private final OrderProductsCrossCut orderProductsCrossCut;
 	private final MeterRegistry meterRegistry;
 
 	final Counter counterQuantidadeNovasSolicitacoes;
 	final AtomicInteger gaugeValueProdutosAdquiridos = new AtomicInteger();
 
-    public OrderController(OrderModelAssembler assembler, OrderRepository orderRepository, ProductRepository productRepository, MeterRegistry meterRegistry) {
+    public OrderController(
+			OrderModelAssembler assembler,
+			OrderRepository orderRepository,
+			ProductRepository productRepository,
+			OrderProductsCrossCut orderProductsCrossCut,
+			MeterRegistry meterRegistry) {
+
         this.assembler = assembler;
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
+		this.orderProductsCrossCut = orderProductsCrossCut;
         this.meterRegistry = meterRegistry;
 
 		this.counterQuantidadeNovasSolicitacoes = Counter.builder("app_custom_quantidade_novas_solicitacoes")
@@ -61,12 +66,26 @@ public class OrderController {
 			@RequestParam(defaultValue = "100") final Integer size) {
 
 		final Pageable pageable = PageRequest.of(page, size);
-		final List<EntityModel<Order>> orders = orderRepository.findAll(pageable).stream()
+
+		final List<Order> orders = orderRepository.findAll(pageable).stream().toList();
+		orders.stream()
+				.map(Order::getItems)
+				.flatMap(Collection::stream)
+				.forEach(item -> {
+					final Product p = orderProductsCrossCut.findById(item.getProduct().getId());
+					item.setProduct(p);
+				});
+
+		//final List<EntityModel<Order>> orders = orderRepository.findAll(pageable).stream()
+		//		.map(assembler::toModel)
+		//		.collect(Collectors.toList());
+
+		final List<EntityModel<Order>> ordersModel = orders.stream()
 				.map(assembler::toModel)
-				.collect(Collectors.toList());
+				.toList();
 
 		log.info("{} orders retrieved", orders.size());
-		return CollectionModel.of(orders,
+		return CollectionModel.of(ordersModel,
 				linkTo(methodOn(OrderController.class).all(0, 100)).withSelfRel());
 	}
 
@@ -77,6 +96,11 @@ public class OrderController {
 		final Order order = orderRepository.findById(id)
 				.orElseThrow(() -> new OrderNotFoundException(id));
 
+		order.getItems().forEach(item -> {
+			final Product p = orderProductsCrossCut.findById(item.getProduct().getId());
+			item.setProduct(p);
+		});
+
 		log.debug("Order: {}", order);
 
 		return assembler.toModel(order);
@@ -85,7 +109,6 @@ public class OrderController {
 	@PostMapping("/orders")
 	public ResponseEntity<EntityModel<Order>> newOrder(final @RequestBody Order order) {
 		log.info("requested new order");
-
 
 		if (CollectionUtils.isEmpty(order.getItems())) {
 			log.info("order request with no items");
@@ -99,8 +122,11 @@ public class OrderController {
 		BigDecimal totalPrice = BigDecimal.ZERO;
 		for (OrderItem item : order.getItems()) {
 			final Long productId = item.getProduct().getId();
-			final Product product = productRepository.findById(productId)
-					.orElseThrow(() -> new OrderItemProductNotFoundException(productId));
+
+			// final Product product = productRepository.findById(productId)
+			//	.orElseThrow(() -> new OrderItemProductNotFoundException(productId));
+			final Product product = orderProductsCrossCut.findById(productId);
+
 			final BigDecimal productPrice = product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
 			item.setProduct(product);
 			totalPrice = totalPrice.add(productPrice);

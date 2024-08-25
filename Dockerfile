@@ -13,7 +13,6 @@ RUN --mount=type=cache,target=/root/.m2 mvn -f $HOME/pom.xml clean install
 # Package stage
 #
 FROM openjdk:17
-ARG JAR_FILE=/usr/app/target/*.jar
-COPY --from=build $JAR_FILE /app/app.jar
+COPY --from=build /usr/app/target/*.jar /app/app.jar
 EXPOSE 8080
 ENTRYPOINT java -jar /app/app.jar

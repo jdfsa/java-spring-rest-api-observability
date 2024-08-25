@@ -1,6 +1,8 @@
 server.port: 8080
 spring.application.name: store-api
 
+api.products.endpoint.url: http://localhost:8080/products
+
 # expondo rotas: /actuator/<health, info, metrics, prometheus>
 management:
   endpoints.web.exposure.include: health,info,metrics,prometheus

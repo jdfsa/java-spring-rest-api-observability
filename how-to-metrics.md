@@ -1,4 +1,4 @@
-# Instrumentação de Metrics
+# Hands on | Metrics
 
 ## passo 1 - dependências
 Inclua as dependências no arquivo `pom.xml`:

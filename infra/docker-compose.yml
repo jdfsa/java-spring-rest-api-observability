@@ -1,6 +1,7 @@
 services:
 
   db:
+    container_name: db
     image: postgres
     restart: unless-stopped
     env_file:
@@ -10,8 +11,8 @@ services:
     ports:
       - 25432:5432/tcp
 
-  api:
-    container_name: api
+  products:
+    container_name: products
     restart: unless-stopped
     build:
       context: ../
@@ -19,24 +20,39 @@ services:
     env_file:
       - ./pg/posgresql.env
     environment:
-      - SPRING_PROFILES_ACTIVE=pg
-      - DB_HOST=db
-      - DB_PORT=5432
+      SPRING_PROFILES_ACTIVE: product
+      SPRING_APPLICATION_NAME: store-products-api
+      DB_HOST: db
+      DB_PORT: 5432
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://host.docker.internal:34318/v1/traces
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: 1.0
     ports:
-      - 8080:8080
-    logging:
-      driver: splunk
-      options:
-        splunk-url: http://localhost:8088
-        splunk-index: logs_storeapp
-        splunk-token: 2b8a7c87-713e-48a0-845b-a62e6b7ecb63
-        splunk-source: store-api
-        splunk-format: "json"
-        splunk-insecureskipverify: "true"
-        splunk-verify-connection: "false"
+      - 8081:8080
     depends_on:
       - db
-  
+
+  orders:
+    container_name: orders
+    restart: unless-stopped
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    env_file:
+      - ./pg/posgresql.env
+    environment:
+      SPRING_PROFILES_ACTIVE: order
+      SPRING_APPLICATION_NAME: store-orders-api
+      DB_HOST: db
+      DB_PORT: 5432
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://host.docker.internal:34318/v1/traces
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: 1.0
+      API_PRODUCTS_ENDPOINT_URL: http://products:8080/products
+    ports:
+      - 8080:8080
+    depends_on:
+      - db
+      - products
+
 
 volumes:
   pg-data:
