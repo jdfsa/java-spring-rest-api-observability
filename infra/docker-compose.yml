@@ -24,7 +24,7 @@ services:
       SPRING_APPLICATION_NAME: store-products-api
       DB_HOST: db
       DB_PORT: 5432
-      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://host.docker.internal:34318/v1/traces
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://host.docker.internal:4318/v1/traces
       MANAGEMENT_TRACING_SAMPLING_PROBABILITY: 1.0
     ports:
       - 8081:8080
@@ -44,7 +44,7 @@ services:
       SPRING_APPLICATION_NAME: store-orders-api
       DB_HOST: db
       DB_PORT: 5432
-      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://host.docker.internal:34318/v1/traces
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://host.docker.internal:4318/v1/traces
       MANAGEMENT_TRACING_SAMPLING_PROBABILITY: 1.0
       API_PRODUCTS_ENDPOINT_URL: http://products:8080/products
     ports:

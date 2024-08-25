@@ -71,6 +71,7 @@ public class OrderController {
 		orders.stream()
 				.map(Order::getItems)
 				.flatMap(Collection::stream)
+				.parallel()
 				.forEach(item -> {
 					final Product p = orderProductsCrossCut.findById(item.getProduct().getId());
 					item.setProduct(p);

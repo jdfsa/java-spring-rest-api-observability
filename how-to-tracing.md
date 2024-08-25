@@ -1,8 +1,8 @@
 # Hands on | Tracing
 
-Há várias formas de coletar e enviar dados de tracing de aplicação Java para o Jaeger. Você pode utilizar **Micrometer**, **Spring Cloud Sleuth** e **OpenTelemetry Java Agent**.
+Há várias formas de coletar e enviar dados de tracing de aplicação Java para o Jaeger. Você pode utilizar **Micrometer**, **Spring Cloud Sleuth** e **OpenTelemetry** com ou sem Java Agent.
 
-Neste hands on vamos utilizar o OpenTelemetry com Java Agent. 
+Neste hands on vamos utilizar o OpenTelemetry sem Java Agent. 
 
 ## Infra
 
